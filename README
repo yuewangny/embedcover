@@ -1,0 +1,25 @@
+Embedcover is a command tool to automatically embed album cover images into music files. It now only supports MP3 audio files and grabs album arts from Douban(http://www.douban.com) using Douban API.
+
+Requires:
+    2.3 <= Python < 3.0
+    mutagen (a Python module to handle audio metadata.) 
+
+Intall:
+   $ sudo python setup.py install
+
+How to use:
+  Usage: embedcover [options]
+  Options:
+    -h, --help            show this help message and exit
+    -v, --verbose         be verbose(the default)
+    -q, --quiet           be quiet
+    -r, --recursive       deal with directories recursively
+    -d DIRECTORY, --dir=DIRECTORY         
+                          the directory with music files to deal with
+
+Example:
+  $ embedcover -r -d ~/music
+  Handle all MP3 files under ~/music and subdirectories
+
+Notes:
+  To grab the correct album art, you'd better have the album titles specified in the ID3 tag of the music files.
