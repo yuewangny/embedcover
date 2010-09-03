@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+#
+# Copyright 2010 Margaret Wang <pipituliuliu@gmail.com>
+#
+# This file is part of embedcover.
+#
+# Embedcover is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Embedcover is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
+
+
+import douban_cover
+from douban_cover.douban_client import CoverGrabber
+from douban_cover.file_op import FileOperation
+from douban_cover.tag_handler import TagHandler
+from douban_cover.result_parser import Parser,XmlParser
+
+import sys,os
+import getopt
+import urllib,urllib2
+from optparse import OptionParser
+
+grabber = CoverGrabber()
+parser = XmlParser()
+fo = FileOperation()
+
+def file_handle(filename):
+    if verbose:
+        print "Handling file:%s"%(filename)
+    th = TagHandler(filename)
+    if th.has_cover():
+        if verbose:
+            print "Already has cover!"
+    else:
+        if verbose:
+            print "Grabbing cover for the song:%s album:%s"%(th.get_song_title(),th.get_album_title())
+        xml_result = grabber.search_album_covers(th.get_album_title(),th.get_song_title(),filename,1)
+        albums = parser.parse_result(xml_result)
+        if len(albums) == 0:
+            if verbose:
+                print "No matching album found!Next..."
+        else:
+            album = albums[0]
+            image_url = album["image"]
+            if image_url.find("http:") == 0:
+                th.embed_cover(urllib.urlopen(image_url.replace("spic","lpic",1)).read())
+                if verbose:
+                    print "Cover embeded! Next..."
+            else:
+                if verbose:
+                    print "No matching cover found! Next..."
+
+def recur_handle(directory):
+    fo.cd(directory)
+   # print "Entering:%s"%(directory)
+   # print "current:%s"%(os.getcwd())
+    for filename in fo.ls_dir():
+        if filename != "..":
+            recur_handle(filename)
+    for filename in fo.ls_file("mp3"):
+        file_handle(filename)
+    fo.cd("..")
+
+
+if __name__ == '__main__':
+    recursive = False
+    directory = None
+
+    oparser = OptionParser()
+    oparser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=True, help="be verbose(the default)")
+    oparser.add_option("-q", "--quiet", action="store_false", dest="verbose", help="be quiet")
+    oparser.add_option("-r", "--recursive", action="store_true", dest="recursive", help="deal with directories recursively")
+    oparser.add_option("-d", "--dir", dest="directory", help="the directory with music files to deal with")
+
+    (options, args) = oparser.parse_args()
+    global verbose
+    verbose = options.verbose
+    recursive = options.recursive
+    directory = options.directory
+
+    if not directory:
+        print "Directory must be specified!"
+        print "Type embedcover --help to get help."
+        sys.exit()
+
+    print "Scanning directory:%s"%(directory)
+    if not verbose:
+        print "Please wait...."
+    if not recursive:
+        os.chdir(directory)
+        for filename in os.listdir("."):
+            if filename.find(".mp3") > 0:
+                file_handle(filename)
+    else:
+        recur_handle(directory)
+
+    print "Finished."

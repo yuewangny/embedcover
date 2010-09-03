@@ -1,0 +1,9 @@
+README
+COPYING
+embedcover
+setup.py
+douban_cover/__init__.py
+douban_cover/douban_client.py
+douban_cover/file_op.py
+douban_cover/result_parser.py
+douban_cover/tag_handler.py
